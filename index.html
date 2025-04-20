@@ -1,0 +1,777 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html>
+<head>
+    <title>Anaç GSM Harcama Planlama</title>
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- SheetJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #2F3B4C;
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        .container {
+            background-color: #E8ECEF;
+            width: 100%;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 30px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .list-container {
+            flex: 1;
+        }
+        h2 {
+            color: #6A1B9A; /* Canlı mor */
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 28px;
+            font-style: italic;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        label {
+            color: #1A3C34;
+            font-weight: bold;
+            width: 140px;
+            text-align: right;
+            font-size: 16px;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 12px;
+            border: 1px solid #26A69A;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            flex-grow: 1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        input#miktar, input#ara-odeme-miktar {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        input#tarih, input#ara-odeme-tarih {
+            width: 150px;
+        }
+        input#ara-odeme-miktar {
+            width: 200px;
+        }
+        button {
+            background: linear-gradient(to bottom, #F4A261, #E69138); /* Gradyan */
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            margin-left: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background: linear-gradient(to bottom, #E69138, #D67C27);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        h3 {
+            color: #6A1B9A; /* Canlı mor */
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 22px;
+            font-style: italic;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+        li {
+            padding: 9px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr 1fr 50px 50px;
+            gap: 9px;
+            border-bottom: 1px solid #e0f7fa;
+            align-items: center;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        li.aktarilan {
+            grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr 1fr 50px;
+            background-color: #26A69A;
+            color: #FFFFFF;
+        }
+        li.ara-odeme {
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 50px;
+            background-color: #FF6F61;
+            color: #FFFFFF;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .list-header {
+            font-weight: 600;
+            color: #26A69A; /* Teal */
+            padding: 9px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr 1fr 50px 50px;
+            gap: 9px;
+            border-bottom: 2px solid #1A3C34;
+            margin-bottom: 10px;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+        }
+        .list-header.aktarilan {
+            grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr 1fr 50px;
+        }
+        .list-header span, li span {
+            display: flex;
+            align-items: center;
+        }
+        li button {
+            background-color: #9D4EDD;
+            color: white;
+            border: none;
+            padding: 5px 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+        }
+        li button:hover {
+            background-color: #7B2CBF;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        li button.aktar-btn {
+            background-color: #219653;
+            padding: 5px 18px;
+        }
+        li button.aktar-btn:hover {
+            background-color: #1B7742;
+        }
+        .toplamlar {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #1A3C34;
+            font-weight: bold;
+            color: #1A3C34;
+            text-align: right;
+            font-size: 16px;
+        }
+        .toplamlar div {
+            margin-bottom: 8px;
+        }
+        .toplamlar span {
+            color: #219653;
+        }
+        .kesinti-miktari {
+            color: #A30000;
+        }
+        .islem-sayisi {
+            margin-top: 20px;
+            font-style: italic;
+            color: #52796F;
+            text-align: center;
+            font-size: 14px;
+        }
+        .kesinti-orani-gosterge {
+            background-color: #4FC3F7; /* Canlı mavi */
+            border: 1px solid #26A69A;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 16px;
+            text-align: center;
+            width: 80px;
+            color: #FFFFFF;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .flatpickr-calendar {
+            font-size: 14px !important;
+        }
+        .flatpickr-day {
+            font-size: 14px !important;
+        }
+        .flatpickr-monthDropdown-months, .flatpickr-year {
+            font-size: 14px !important;
+        }
+        footer {
+            background: linear-gradient(to bottom, #E0E0E0, #F5F5F5); /* Gradyan */
+            padding: 10px;
+            text-align: center;
+            color: #1A3C34;
+            font-size: 14px;
+            border-top: 1px solid #E0E0E0;
+        }
+        .excel-btn {
+            background: linear-gradient(to bottom, #26A69A, #2CB7AA);
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: 20px;
+        }
+        .excel-btn:hover {
+            background: linear-gradient(to bottom, #2CB7AA, #33C8BB);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .file-input {
+            margin-top: 10px;
+            margin-right: 20px;
+            display: block;
+            margin-left: auto;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="list-container">
+            <h2>Anaç GSM</h2>
+            <div class="input-group">
+                <label for="miktar">Para Miktarı:</label>
+                <input type="text" id="miktar">
+            </div>
+            <div class="input-group">
+                <label for="taksit">Taksit (1-12):</label>
+                <input type="number" id="taksit" min="1" max="12" value="1">
+                <input type="text" id="tarih" placeholder="DD MMMM (örn. 15 Ekim)">
+                <div id="kesinti-orani-gosterge" class="kesinti-orani-gosterge">%5.5</div>
+                <button onclick="harcamaEkle()">Ekle</button>
+            </div>
+            <h3>Harcamalar</h3>
+            <ul id="harcamalar-liste">
+                <li class="list-header">
+                    <span>Tutar</span>
+                    <span>Kesinti</span>
+                    <span>Oran</span>
+                    <span>Taksit</span>
+                    <span>Kalan</span>
+                    <span>Tarih</span>
+                    <span></span>
+                    <span></span>
+                </li>
+            </ul>
+            <div class="toplamlar">
+                <div>Toplam Harcama: <span id="toplam-harcama">0</span> TL</div>
+                <div>Toplam Kesinti: <span id="toplam-kesinti">0</span> TL</div>
+                <div>Kalan Tutar: <span id="kalan-tutar">0</span> TL</div>
+            </div>
+            <div id="islem-sayisi" class="islem-sayisi">Toplam İşlem: 0</div>
+        </div>
+        <div class="list-container">
+            <h3>Aktarılmış Harcamalar</h3>
+            <div class="input-group">
+                <label for="ara-odeme-miktar">Ara Ödeme:</label>
+                <input type="text" id="ara-odeme-miktar" placeholder="Miktar">
+                <input type="text" id="ara-odeme-tarih" placeholder="DD MMMM (örn. 15 Ekim)">
+                <button onclick="araOdemeEkle()">Ekle</button>
+            </div>
+            <ul id="aktarilan-harcamalar-liste">
+                <li class="list-header aktarilan">
+                    <span>Tutar</span>
+                    <span>Kesinti</span>
+                    <span>Oran</span>
+                    <span>Taksit</span>
+                    <span>Kalan</span>
+                    <span>Tarih</span>
+                    <span></span>
+                </li>
+            </ul>
+            <button class="excel-btn" onclick="exportToExcel()">Excel'e Aktar</button>
+            <input type="file" class="file-input" id="excel-upload" accept=".xlsx" onchange="importFromExcel(event)">
+            <div class="toplamlar">
+                <div>Toplam Harcama: <span id="aktarilan-toplam-harcama">0</span> TL</div>
+                <div>Toplam Kesinti: <span id="aktarilan-toplam-kesinti">0</span> TL</div>
+                <div>Toplam Ara Ödeme: <span id="toplam-ara-odeme">0</span> TL</div>
+                <div>Kalan Tutar: <span id="aktarilan-kalan-tutar">0</span> TL</div>
+            </div>
+            <div id="aktarilan-islem-sayisi" class="islem-sayisi">Toplam Aktarılmış İşlem: 0</div>
+        </div>
+    </div>
+    <footer id="datetime-footer"></footer>
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/tr.js"></script>
+    <script>
+        let harcamalar = [];
+        let aktarilanHarcamalar = [];
+        let lastHarcamaTarih = 'today';
+        let lastAraOdemeTarih = 'today';
+
+        const miktarInput = document.getElementById('miktar');
+        const taksitInput = document.getElementById('taksit');
+        const tarihInput = document.getElementById('tarih');
+        const araOdemeMiktarInput = document.getElementById('ara-odeme-miktar');
+        const araOdemeTarihInput = document.getElementById('ara-odeme-tarih');
+        const kesintiOraniGosterge = document.getElementById('kesinti-orani-gosterge');
+        const harcamalarListe = document.getElementById('harcamalar-liste');
+        const aktarilanHarcamalarListe = document.getElementById('aktarilan-harcamalar-liste');
+        const toplamHarcamaElement = document.getElementById('toplam-harcama');
+        const toplamKesintiElement = document.getElementById('toplam-kesinti');
+        const kalanTutarElement = document.getElementById('kalan-tutar');
+        const islemSayisiElement = document.getElementById('islem-sayisi');
+        const aktarilanToplamHarcamaElement = document.getElementById('aktarilan-toplam-harcama');
+        const aktarilanToplamKesintiElement = document.getElementById('aktarilan-toplam-kesinti');
+        const toplamAraOdemeElement = document.getElementById('toplam-ara-odeme');
+        const aktarilanKalanTutarElement = document.getElementById('aktarilan-kalan-tutar');
+        const aktarilanIslemSayisiElement = document.getElementById('aktarilan-islem-sayisi');
+        const datetimeFooter = document.getElementById('datetime-footer');
+
+        // Ay isimlerini sayısal forma çevirme
+        const ayMap = {
+            'Ocak': '01', 'Şubat': '02', 'Mart': '03', 'Nisan': '04',
+            'Mayıs': '05', 'Haziran': '06', 'Temmuz': '07', 'Ağustos': '08',
+            'Eylül': '09', 'Ekim': '10', 'Kasım': '11', 'Aralık': '12'
+        };
+
+        // Tarih sıralama fonksiyonu
+        function parseTarih(tarih) {
+            const [gun, ay] = tarih.split(' ');
+            const ayNum = ayMap[ay] || '01';
+            return `${ayNum}${gun.padStart(2, '0')}`;
+        }
+
+        // Flatpickr'ı başlat
+        flatpickr("#tarih", {
+            locale: "tr",
+            dateFormat: "d F",
+            allowInput: false,
+            disableMobile: true,
+            defaultDate: lastHarcamaTarih,
+            onChange: function(selectedDates, dateStr) {
+                lastHarcamaTarih = dateStr;
+            }
+        });
+
+        flatpickr("#ara-odeme-tarih", {
+            locale: "tr",
+            dateFormat: "d F",
+            allowInput: false,
+            disableMobile: true,
+            defaultDate: lastAraOdemeTarih,
+            onChange: function(selectedDates, dateStr) {
+                lastAraOdemeTarih = dateStr;
+            }
+        });
+
+        // Tarih doğrulama fonksiyonu
+        function tarihDogrula(tarih) {
+            if (!tarih) return false;
+            const regex = /^(\d{1,2})\s([A-Za-zÇŞĞÜİÖçşğüıö]+)$/;
+            const match = tarih.match(regex);
+            if (!match) return false;
+            const gun = parseInt(match[1]);
+            return gun >= 1 && gun <= 31;
+        }
+
+        // Saat, tarih, gün güncelleme
+        function updateDateTime() {
+            const now = new Date();
+            const saat = now.toLocaleTimeString('tr-TR');
+            const tarih = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+            const gun = now.toLocaleDateString('tr-TR', { weekday: 'long' });
+            datetimeFooter.textContent = `${saat} | ${tarih} | ${gun}`;
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // Excel'e aktarma
+        function exportToExcel() {
+            const data = aktarilanHarcamalar.map(item => {
+                if (item.type === "harcama") {
+                    return {
+                        Tür: "Harcama",
+                        Tutar: `${item.miktar.toLocaleString('tr-TR')} TL`,
+                        "Kesinti Miktarı": `${item.kesintiMiktari.toLocaleString('tr-TR')} TL`,
+                        Oran: `%${item.kesintiOrani.toFixed(1)}`,
+                        Taksit: item.taksit,
+                        Kalan: `${item.kalan.toLocaleString('tr-TR')} TL`,
+                        Tarih: item.tarih
+                    };
+                } else {
+                    return {
+                        Tür: "Ara Ödeme",
+                        Tutar: `${item.miktar.toLocaleString('tr-TR')} TL`,
+                        "Kesinti Miktarı": "",
+                        Oran: "",
+                        Taksit: "",
+                        Kalan: "",
+                        Tarih: item.tarih
+                    };
+                }
+            });
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws['!cols'] = [
+                { wch: 15 }, // Tür
+                { wch: 20 }, // Tutar
+                { wch: 20 }, // Kesinti Miktarı
+                { wch: 15 }, // Oran
+                { wch: 10 }, // Taksit
+                { wch: 20 }, // Kalan
+                { wch: 15 }  // Tarih
+            ];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Aktarilan Harcamalar");
+            const now = new Date();
+            const fileName = `Aktarilan_Harcamalar_${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        // Excel'den içe aktarma
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                aktarilanHarcamalar = jsonData.map(item => {
+                    if (item.Tür === "Harcama") {
+                        const miktar = parseInt(item.Tutar.replace(/[^\d]/g, ''));
+                        const kesintiMiktari = parseInt(item["Kesinti Miktarı"].replace(/[^\d]/g, ''));
+                        const kesintiOrani = parseFloat(item.Oran.replace(/[^\d.]/g, ''));
+                        const taksit = parseInt(item.Taksit);
+                        const kalan = parseInt(item.Kalan.replace(/[^\d]/g, ''));
+                        return {
+                            type: "harcama",
+                            miktar,
+                            kesintiOrani,
+                            taksit,
+                            kesintiMiktari,
+                            kalan,
+                            tarih: item.Tarih
+                        };
+                    } else {
+                        const miktar = parseInt(item.Tutar.replace(/[^\d]/g, ''));
+                        return {
+                            type: "ara-odeme",
+                            miktar,
+                            tarih: item.Tarih
+                        };
+                    }
+                });
+
+                guncelleListeleriVeToplamlari();
+                document.getElementById('excel-upload').value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Sayfa yüklendiğinde verileri yükle
+        guncelleListeleriVeToplamlari();
+        guncelleKesintiOraniGostergesi(1);
+
+        miktarInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                harcamaEkle();
+            }
+        });
+
+        miktarInput.addEventListener('input', function() {
+            this.value = this.value.replace(/\./g, '');
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        miktarInput.addEventListener('blur', function() {
+            const value = parseFloat(this.value);
+            if (!isNaN(value)) {
+                this.value = value.toLocaleString('tr-TR');
+            }
+        });
+
+        taksitInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                harcamaEkle();
+            }
+        });
+
+        araOdemeMiktarInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                araOdemeEkle();
+            }
+        });
+
+        araOdemeMiktarInput.addEventListener('input', function() {
+            this.value = this.value.replace(/\./g, '');
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        araOdemeMiktarInput.addEventListener('blur', function() {
+            const value = parseFloat(this.value);
+            if (!isNaN(value)) {
+                this.value = value.toLocaleString('tr-TR');
+            }
+        });
+
+        taksitInput.addEventListener('input', function() {
+            const taksitSayisi = parseInt(this.value);
+            if (!isNaN(taksitSayisi) && taksitSayisi >= 1 && taksitSayisi <= 12) {
+                guncelleKesintiOraniGostergesi(taksitSayisi);
+            } else {
+                kesintiOraniGosterge.textContent = '%-';
+            }
+        });
+
+        function getKesintiOrani(taksitSayisi) {
+            if (taksitSayisi === 1) {
+                return 5.5;
+            } else if (taksitSayisi >= 2 && taksitSayisi <= 12) {
+                const oranBaslangic = 10;
+                const oranBitis = 28;
+                const taksitSayisiAraligi = 12 - 2 + 1;
+                const oranAraligi = oranBitis - oranBaslangic;
+                const oranAdimi = oranAraligi / (taksitSayisiAraligi - 1);
+                const index = taksitSayisi - 2;
+                return oranBaslangic + index * oranAdimi;
+            }
+            return 0;
+        }
+
+        function guncelleKesintiOraniGostergesi(taksitSayisi) {
+            const oran = getKesintiOrani(taksitSayisi);
+            if (oran > 0) {
+                kesintiOraniGosterge.textContent = `%${oran.toFixed(1)}`;
+            } else if (taksitSayisi === 1) {
+                kesintiOraniGosterge.textContent = '%5.5';
+            } else {
+                kesintiOraniGosterge.textContent = '%-';
+            }
+        }
+
+        function yuvarlaOnluga(sayi) {
+            return Math.ceil(sayi / 10) * 10;
+        }
+
+        function harcamaEkle() {
+            const miktarStr = miktarInput.value.replace(/\./g, '');
+            const miktar = parseInt(miktarStr);
+            const taksit = parseInt(taksitInput.value);
+            const tarih = tarihInput.value.trim();
+            const kesintiOrani = getKesintiOrani(taksit);
+
+            if (!isNaN(miktar) && !isNaN(taksit) && taksit >= 1 && taksit <= 12 && miktar > 0 && kesintiOrani > 0) {
+                if (!tarihDogrula(tarih)) {
+                    alert('Lütfen takvimden geçerli bir tarih seçin (örn. 15 Ekim).');
+                    return;
+                }
+                const kesintiMiktari = yuvarlaOnluga((miktar * kesintiOrani) / 100);
+                const kalan = yuvarlaOnluga(miktar - kesintiMiktari);
+                harcamalar.push({ type: "harcama", miktar, kesintiOrani, taksit, kesintiMiktari, kalan, tarih });
+                miktarInput.value = '';
+                taksitInput.value = '1';
+                guncelleKesintiOraniGostergesi(1);
+                miktarInput.focus();
+                guncelleListeleriVeToplamlari();
+            } else if (isNaN(taksit) || taksit < 1 || taksit > 12) {
+                alert('Lütfen 1 ile 12 arasında geçerli bir taksit sayısı girin.');
+            } else if (kesintiOrani === 0 && taksit !== 1) {
+                alert('Bu taksit sayısı için kesinti oranı belirlenemedi.');
+            } else if (isNaN(miktar) || miktar <= 0) {
+                alert('Lütfen geçerli bir para miktarı girin.');
+            }
+        }
+
+        function araOdemeEkle() {
+            const miktarStr = araOdemeMiktarInput.value.replace(/\./g, '');
+            const miktar = parseInt(miktarStr);
+            const tarih = araOdemeTarihInput.value.trim();
+
+            if (!isNaN(miktar) && miktar > 0) {
+                if (!tarihDogrula(tarih)) {
+                    alert('Lütfen takvimden geçerli bir tarih seçin (örn. 15 Ekim).');
+                    return;
+                }
+                let lastHarcamaIndex = -1;
+                for (let i = aktarilanHarcamalar.length - 1; i >= 0; i--) {
+                    if (aktarilanHarcamalar[i].type === "harcama") {
+                        lastHarcamaIndex = i;
+                        break;
+                    }
+                }
+                const insertIndex = lastHarcamaIndex >= 0 ? lastHarcamaIndex + 1 : aktarilanHarcamalar.length;
+                aktarilanHarcamalar.splice(insertIndex, 0, { type: "ara-odeme", miktar, tarih });
+                araOdemeMiktarInput.value = '';
+                guncelleListeleriVeToplamlari();
+            } else {
+                alert('Lütfen geçerli bir ara ödeme miktarı girin.');
+            }
+        }
+
+        function guncelleListeleriVeToplamlari() {
+            // Tarihe göre sıralama
+            harcamalar.sort((a, b) => parseTarih(a.tarih).localeCompare(parseTarih(b.tarih)));
+            aktarilanHarcamalar.sort((a, b) => parseTarih(a.tarih).localeCompare(parseTarih(b.tarih)));
+
+            harcamalarListe.innerHTML = `<li class="list-header">
+                <span>Tutar</span>
+                <span>Kesinti</span>
+                <span>Oran</span>
+                <span>Taksit</span>
+                <span>Kalan</span>
+                <span>Tarih</span>
+                <span></span>
+                <span></span>
+            </li>`;
+            let toplamHarcama = 0;
+            let toplamKesinti = 0;
+            let toplamKalan = 0;
+
+            harcamalar.forEach((harcama, index) => {
+                toplamHarcama += harcama.miktar;
+                toplamKesinti += harcama.kesintiMiktari;
+                toplamKalan += harcama.kalan;
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${harcama.miktar.toLocaleString('tr-TR')} TL</span>
+                    <span class="kesinti-miktari">${harcama.kesintiMiktari.toLocaleString('tr-TR')} TL</span>
+                    <span>%${harcama.kesintiOrani.toFixed(1)}</span>
+                    <span>${harcama.taksit}</span>
+                    <span>${harcama.kalan.toLocaleString('tr-TR')} TL</span>
+                    <span>${harcama.tarih}</span>
+                    <button onclick="harcamaSil(${index})">Sil</button>
+                    <button class="aktar-btn" onclick="harcamaAktar(${index})">Aktar</button>
+                `;
+                harcamalarListe.appendChild(li);
+            });
+
+            toplamHarcamaElement.textContent = toplamHarcama.toLocaleString('tr-TR');
+            toplamKesintiElement.textContent = toplamKesinti.toLocaleString('tr-TR');
+            kalanTutarElement.textContent = toplamKalan.toLocaleString('tr-TR');
+            islemSayisiElement.textContent = `Toplam İşlem: ${harcamalar.length}`;
+
+            aktarilanHarcamalarListe.innerHTML = `<li class="list-header aktarilan">
+                <span>Tutar</span>
+                <span>Kesinti</span>
+                <span>Oran</span>
+                <span>Taksit</span>
+                <span>Kalan</span>
+                <span>Tarih</span>
+                <span></span>
+            </li>`;
+            let aktarilanToplamHarcama = 0;
+            let aktarilanToplamKesinti = 0;
+            let toplamAraOdeme = 0;
+
+            aktarilanHarcamalar.forEach((item, index) => {
+                const li = document.createElement('li');
+                if (item.type === "harcama") {
+                    aktarilanToplamHarcama += item.miktar;
+                    aktarilanToplamKesinti += item.kesintiMiktari;
+                    li.classList.add('aktarilan');
+                    li.innerHTML = `
+                        <span>${item.miktar.toLocaleString('tr-TR')} TL</span>
+                        <span class="kesinti-miktari">${item.kesintiMiktari.toLocaleString('tr-TR')} TL</span>
+                        <span>%${item.kesintiOrani.toFixed(1)}</span>
+                        <span>${item.taksit}</span>
+                        <span>${item.kalan.toLocaleString('tr-TR')} TL</span>
+                        <span>${item.tarih}</span>
+                        <button onclick="aktarilanHarcamaSil(${index})">Sil</button>
+                    `;
+                } else if (item.type === "ara-odeme") {
+                    toplamAraOdeme += item.miktar;
+                    li.classList.add('ara-odeme');
+                    li.innerHTML = `
+                        <span>${item.miktar.toLocaleString('tr-TR')} TL</span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span>${item.tarih}</span>
+                        <button onclick="aktarilanHarcamaSil(${index})">Sil</button>
+                    `;
+                }
+                aktarilanHarcamalarListe.appendChild(li);
+            });
+
+            aktarilanToplamHarcamaElement.textContent = aktarilanToplamHarcama.toLocaleString('tr-TR');
+            aktarilanToplamKesintiElement.textContent = aktarilanToplamKesinti.toLocaleString('tr-TR');
+            toplamAraOdemeElement.textContent = toplamAraOdeme.toLocaleString('tr-TR');
+            aktarilanKalanTutarElement.textContent = ((aktarilanToplamHarcama - aktarilanToplamKesinti) - toplamAraOdeme).toLocaleString('tr-TR');
+            aktarilanIslemSayisiElement.textContent = `Toplam Aktarılmış İşlem: ${aktarilanHarcamalar.filter(item => item.type === "harcama").length}`;
+        }
+
+        function harcamaSil(index) {
+            harcamalar.splice(index, 1);
+            guncelleListeleriVeToplamlari();
+        }
+
+        function aktarilanHarcamaSil(index) {
+            aktarilanHarcamalar.splice(index, 1);
+            guncelleListeleriVeToplamlari();
+        }
+
+        function harcamaAktar(index) {
+            const harcama = harcamalar.splice(index, 1)[0];
+            aktarilanHarcamalar.push(harcama);
+            guncelleListeleriVeToplamlari();
+        }
+
+        // Sayfa yüklendiğinde verileri yükle
+        guncelleListeleriVeToplamlari();
+    </script>
+</body>
+</html>
