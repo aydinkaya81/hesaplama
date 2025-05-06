@@ -1,0 +1,329 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GÜNLÜK HESAP İŞLEMLERİ</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 15px;
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            color: #333;
+        }
+        .page-header {
+            text-align: center;
+            font-size: 2em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .container-bottom {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .frame {
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .frame:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        .frame-anac { background: #e8f0fe; } /* Muted blue */
+        .frame-akfa { background: #e6f4ea; } /* Soft green */
+        .frame-ben { background: #f0f0f0; } /* Neutral gray */
+        .frame-ayd { background: #fef6e7; } /* Warm beige */
+        .frame-ars { background: #f0e8f5; } /* Light purple */
+        .frame h2 {
+            margin: 0 0 10px;
+            color: #2c3e50;
+            font-size: 1.2em;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        .input-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .input-group input {
+            padding: 6px;
+            font-size: 14px;
+            border: 1px solid #dfe6e9;
+            border-radius: 4px;
+            width: 100px;
+            background: #f9f9f9;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .input-group button {
+            padding: 6px 12px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .add-button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+        .add-button:hover {
+            background: linear-gradient(45deg, #2980b9, #2c3e50);
+        }
+        .clear-button {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        .clear-button:hover {
+            background: linear-gradient(45deg, #c0392b, #a93226);
+        }
+        .delete-row-button {
+            padding: 4px 8px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        .delete-row-button:hover {
+            background: #c0392b;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            background: #fff;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        table, th, td {
+            border: 1px solid #dfe6e9;
+        }
+        th, td {
+            padding: 6px;
+            text-align: left;
+            font-size: 12px;
+        }
+        th {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            font-weight: bold;
+        }
+        td {
+            background: #f9f9f9;
+        }
+        tr:nth-child(even) td {
+            background: #ecf0f1;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-header">GÜNLÜK HESAP İŞLEMLERİ</h1>
+
+    <div class="container">
+        <div class="frame frame-anac">
+            <h2>Anaç GSM</h2>
+            <div class="input-group">
+                <input type="number" id="amount-anac" placeholder="Tutar" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-anac').click()">
+                <input type="number" id="percentage-anac" placeholder="5.5" value="5.5" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-anac').click()">
+                <button id="add-anac" class="add-button" onclick="addToList('anac')">Ekle</button>
+                <button class="clear-button" onclick="clearList('anac')">Tümünü Sil</button>
+            </div>
+            <table id="table-anac">
+                <thead>
+                    <tr>
+                        <th>Tutar</th>
+                        <th>Yüzde</th>
+                        <th>Kesinti</th>
+                        <th>Net</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="frame frame-akfa">
+            <h2>Akfa GSM</h2>
+            <div class="input-group">
+                <input type="number" id="amount-akfa" placeholder="Tutar" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-akfa').click()">
+                <input type="number" id="percentage-akfa" placeholder="4.5" value="4.5" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-akfa').click()">
+                <button id="add-akfa" class="add-button" onclick="addToList('akfa')">Ekle</button>
+                <button class="clear-button" onclick="clearList('akfa')">Tümünü Sil</button>
+            </div>
+            <table id="table-akfa">
+                <thead>
+                    <tr>
+                        <th>Tutar</th>
+                        <th>Yüzde</th>
+                        <th>Kesinti</th>
+                        <th>Net</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="frame frame-ben">
+            <h2>Ben</h2>
+            <div class="input-group">
+                <input type="number" id="amount-ben" placeholder="Tutar" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-ben').click()">
+                <input type="number" id="percentage-ben" placeholder="5.5" value="5.5" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-ben').click()">
+                <button id="add-ben" class="add-button" onclick="addToList('ben')">Ekle</button>
+                <button class="clear-button" onclick="clearList('ben')">Tümünü Sil</button>
+            </div>
+            <table id="table-ben">
+                <thead>
+                    <tr>
+                        <th>Tutar</th>
+                        <th>Yüzde</th>
+                        <th>Kesinti</th>
+                        <th>Net</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="container-bottom">
+        <div class="frame frame-ayd">
+            <h2>Ayd GSM</h2>
+            <div class="input-group">
+                <input type="number" id="amount-ayd" placeholder="Tutar" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-ayd').click()">
+                <input type="number" id="percentage-ayd" placeholder="3.9" value="3.9" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-ayd').click()">
+                <button id="add-ayd" class="add-button" onclick="addToList('ayd')">Ekle</button>
+                <button class="clear-button" onclick="clearList('ayd')">Tümünü Sil</button>
+            </div>
+            <table id="table-ayd">
+                <thead>
+                    <tr>
+                        <th>Tutar</th>
+                        <th>Yüzde</th>
+                        <th>Kesinti</th>
+                        <th>Net</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="frame frame-ars">
+            <h2>Ars GSM</h2>
+            <div class="input-group">
+                <input type="number" id="amount-ars" placeholder="Tutar" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-ars').click()">
+                <input type="number" id="percentage-ars" placeholder="4" value="4" step="0.01" onkeydown="if(event.key === 'Enter') document.getElementById('add-ars').click()">
+                <button id="add-ars" class="add-button" onclick="addToList('ars')">Ekle</button>
+                <button class="clear-button" onclick="clearList('ars')">Tümünü Sil</button>
+            </div>
+            <table id="table-ars">
+                <thead>
+                    <tr>
+                        <th>Tutar</th>
+                        <th>Yüzde</th>
+                        <th>Kesinti</th>
+                        <th>Net</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function addToList(frame) {
+            const amountInput = document.getElementById(`amount-${frame}`);
+            const percentageInput = document.getElementById(`percentage-${frame}`);
+            const tableBody = document.querySelector(`#table-${frame} tbody`);
+
+            const amount = parseFloat(amountInput.value);
+            const percentage = parseFloat(percentageInput.value);
+
+            if (isNaN(amount) || isNaN(percentage)) {
+                alert("Lütfen geçerli bir tutar ve yüzde girin!");
+                return;
+            }
+
+            const deduction = (amount * percentage) / 100;
+            const net = amount - deduction;
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td>${percentage.toFixed(2)}</td>
+                <td>${deduction.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td>${net.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td><button class="delete-row-button" onclick="this.parentElement.parentElement.remove()">Sil</button></td>
+            `;
+            tableBody.appendChild(row);
+
+            amountInput.value = "";
+            percentageInput.value = percentageInput.placeholder;
+        }
+
+        function clearList(frame) {
+            const tableBody = document.querySelector(`#table-${frame} tbody`);
+            tableBody.innerHTML = "";
+        }
+    </script>
+</body>
+</html>
