@@ -49,6 +49,7 @@
             margin: 15px;
             background: linear-gradient(135deg, #e0eafc, #cfdef3);
             color: #333;
+            user-select: none;
         }
         .page-header {
             text-align: center;
@@ -75,21 +76,75 @@
             border-radius: 8px;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.3);
             transition: transform 0.2s, box-shadow 0.2s;
+            display: none;
         }
         .frame:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
         }
-        .frame-anac { background: #e8f0fe; }
-        .frame-akfa { background: #e6f4ea; }
-        .frame-ben { background: #f0f0f0; }
-        .frame-ayd { background: #fef6e7; }
-        .frame-ars { background: #f0e8f5; }
+        .frame-firma1 { background: #e8f0fe; }
+        .frame-firma2 { background: #e6f4ea; }
+        .frame-firma3 { background: #f0f0f0; }
+        .frame-firma4 { background: #fef6e7; }
+        .frame-firma5 { background: #f0e8f5; }
         .frame h2 {
             margin: 0 0 10px;
             color: #2c3e50;
             font-size: 1.2em;
             text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+        }
+        .frame-header {
+            background: #dfe6e9;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1.2em;
+            color: #2c3e50;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .frame-header:hover {
+            background: #b2bec3;
+        }
+        .frame-password {
+            display: none;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .frame-password.active {
+            display: block;
+        }
+        .frame-password input {
+            padding: 5px;
+            margin-right: 5px;
+            border: 1px solid #dfe6e9;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .frame-password button {
+            padding: 5px 10px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            transition: background 0.2s;
+        }
+        .frame-password button:hover {
+            background: linear-gradient(45deg, #2980b9, #2c3e50);
+        }
+        .error-message {
+            color: red;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .frame-content {
+            display: none;
         }
         .input-group {
             display: flex;
@@ -201,167 +256,342 @@
         .reset-button:hover {
             background: linear-gradient(45deg, #d35400, #c0392b);
         }
+        .show-section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .show-section label {
+            font-size: 14px;
+            font-weight: bold;
+            margin-right: 10px;
+            color: #2c3e50;
+        }
+        .show-section select, .show-section button {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .show-section button {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .show-section button:hover {
+            background: linear-gradient(45deg, #27ae60, #219653);
+        }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;" onkeydown="if(event.ctrlKey && event.key === 'u') return false;">
     <h1 class="page-header">GÜNLÜK HESAP İŞLEMLERİ</h1>
 
     <div class="container">
-        <div class="frame frame-anac">
-            <h2>Anaç GSM</h2>
-            <div class="input-group">
-                <input type="number" id="amount-anac" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-anac').click()">
-                <input type="number" id="percentage-anac" placeholder="5.5" value="5.5" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-anac').click()">
-                <button id="add-anac" class="add-button" onclick="addToList('anac')">Ekle</button>
-                <button class="clear-button" onclick="clearList('anac')">Tümünü Sil</button>
+        <div class="frame frame-firma1">
+            <div class="frame-header" onclick="togglePassword('firma1')">Firma1</div>
+            <div class="frame-password" id="password-firma1">
+                <input type="password" id="password-input-firma1" placeholder="Şifre" onkeydown="if(event.key === 'Enter') checkPassword('firma1')">
+                <button onclick="checkPassword('firma1')">Giriş</button>
+                <div class="error-message" id="error-firma1">Şifre Yanlış</div>
             </div>
-            <table id="table-anac">
-                <thead>
-                    <tr>
-                        <th>Tutar</th>
-                        <th>Yüzde</th>
-                        <th>Kesinti</th>
-                        <th>Net</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                    <tr>
-                        <td>Toplam: <span id="total-amount-anac">0,00</span></td>
-                        <td></td>
-                        <td><span id="total-deduction-anac">0,00</span></td>
-                        <td><span id="total-net-anac">0,00</span></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
+            <div class="frame-content" id="content-firma1">
+                <h2>Firma1</h2>
+                <div class="input-group">
+                    <input type="number" id="amount-firma1" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma1').click()">
+                    <input type="number" id="percentage-firma1" placeholder="5.5" value="5.5" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma1').click()">
+                    <button id="add-firma1" class="add-button" onclick="addToList('firma1')">Ekle</button>
+                    <button class="clear-button" onclick="clearList('firma1')">Tümünü Sil</button>
+                </div>
+                <table id="table-firma1">
+                    <thead>
+                        <tr>
+                            <th>Tutar</th>
+                            <th>Yüzde</th>
+                            <th>Kesinti</th>
+                            <th>Net</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Harcama: <span id="total-amount-firma1">0,00</span></td>
+                            <td></td>
+                            <td><span id="total-deduction-firma1">0,00</span></td>
+                            <td><span id="total-net-firma1">0,00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="number" id="payment-amount-firma1" placeholder="Ödeme Miktarı" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-payment-firma1').click()">
+                    <button id="add-payment-firma1" class="add-button" onclick="addPayment('firma1')">Ödeme Ekle</button>
+                    <button class="clear-button" onclick="clearPayments('firma1')">Ödemeleri Sil</button>
+                </div>
+                <table id="payment-table-firma1">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Ödeme Miktarı</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Ödeme: <span id="total-payment-firma1">0,00</span></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
 
-        <div class="frame frame-akfa">
-            <h2>Akfa GSM</h2>
-            <div class="input-group">
-                <input type="number" id="amount-akfa" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-akfa').click()">
-                <input type="number" id="percentage-akfa" placeholder="4.5" value="4.5" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-akfa').click()">
-                <button id="add-akfa" class="add-button" onclick="addToList('akfa')">Ekle</button>
-                <button class="clear-button" onclick="clearList('akfa')">Tümünü Sil</button>
+        <div class="frame frame-firma2">
+            <div class="frame-header" onclick="togglePassword('firma2')">Firma2</div>
+            <div class="frame-password" id="password-firma2">
+                <input type="password" id="password-input-firma2" placeholder="Şifre" onkeydown="if(event.key === 'Enter') checkPassword('firma2')">
+                <button onclick="checkPassword('firma2')">Giriş</button>
+                <div class="error-message" id="error-firma2">Şifre Yanlış</div>
             </div>
-            <table id="table-akfa">
-                <thead>
-                    <tr>
-                        <th>Tutar</th>
-                        <th>Yüzde</th>
-                        <th>Kesinti</th>
-                        <th>Net</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                    <tr>
-                        <td>Toplam: <span id="total-amount-akfa">0,00</span></td>
-                        <td></td>
-                        <td><span id="total-deduction-akfa">0,00</span></td>
-                        <td><span id="total-net-akfa">0,00</span></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
+            <div class="frame-content" id="content-firma2">
+                <h2>Firma2</h2>
+                <div class="input-group">
+                    <input type="number" id="amount-firma2" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma2').click()">
+                    <input type="number" id="percentage-firma2" placeholder="4.5" value="4.5" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma2').click()">
+                    <button id="add-firma2" class="add-button" onclick="addToList('firma2')">Ekle</button>
+                    <button class="clear-button" onclick="clearList('firma2')">Tümünü Sil</button>
+                </div>
+                <table id="table-firma2">
+                    <thead>
+                        <tr>
+                            <th>Tutar</th>
+                            <th>Yüzde</th>
+                            <th>Kesinti</th>
+                            <th>Net</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Harcama: <span id="total-amount-firma2">0,00</span></td>
+                            <td></td>
+                            <td><span id="total-deduction-firma2">0,00</span></td>
+                            <td><span id="total-net-firma2">0,00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="number" id="payment-amount-firma2" placeholder="Ödeme Miktarı" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-payment-firma2').click()">
+                    <button id="add-payment-firma2" class="add-button" onclick="addPayment('firma2')">Ödeme Ekle</button>
+                    <button class="clear-button" onclick="clearPayments('firma2')">Ödemeleri Sil</button>
+                </div>
+                <table id="payment-table-firma2">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Ödeme Miktarı</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Ödeme: <span id="total-payment-firma2">0,00</span></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
 
-        <div class="frame frame-ben">
-            <h2>Ben</h2>
-            <div class="input-group">
-                <input type="number" id="amount-ben" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-ben').click()">
-                <input type="number" id="percentage-ben" placeholder="5.5" value="5.5" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-ben').click()">
-                <button id="add-ben" class="add-button" onclick="addToList('ben')">Ekle</button>
-                <button class="clear-button" onclick="clearList('ben')">Tümünü Sil</button>
+        <div class="frame frame-firma3">
+            <div class="frame-header" onclick="togglePassword('firma3')">Firma3</div>
+            <div class="frame-password" id="password-firma3">
+                <input type="password" id="password-input-firma3" placeholder="Şifre" onkeydown="if(event.key === 'Enter') checkPassword('firma3')">
+                <button onclick="checkPassword('firma3')">Giriş</button>
+                <div class="error-message" id="error-firma3">Şifre Yanlış</div>
             </div>
-            <table id="table-ben">
-                <thead>
-                    <tr>
-                        <th>Tutar</th>
-                        <th>Yüzde</th>
-                        <th>Kesinti</th>
-                        <th>Net</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                    <tr>
-                        <td>Toplam: <span id="total-amount-ben">0,00</span></td>
-                        <td></td>
-                        <td><span id="total-deduction-ben">0,00</span></td>
-                        <td><span id="total-net-ben">0,00</span></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
+            <div class="frame-content" id="content-firma3">
+                <h2>Firma3</h2>
+                <div class="input-group">
+                    <input type="number" id="amount-firma3" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma3').click()">
+                    <input type="number" id="percentage-firma3" placeholder="5.5" value="5.5" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma3').click()">
+                    <button id="add-firma3" class="add-button" onclick="addToList('firma3')">Ekle</button>
+                    <button class="clear-button" onclick="clearList('firma3')">Tümünü Sil</button>
+                </div>
+                <table id="table-firma3">
+                    <thead>
+                        <tr>
+                            <th>Tutar</th>
+                            <th>Yüzde</th>
+                            <th>Kesinti</th>
+                            <th>Net</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Harcama: <span id="total-amount-firma3">0,00</span></td>
+                            <td></td>
+                            <td><span id="total-deduction-firma3">0,00</span></td>
+                            <td><span id="total-net-firma3">0,00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="number" id="payment-amount-firma3" placeholder="Ödeme Miktarı" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-payment-firma3').click()">
+                    <button id="add-payment-firma3" class="add-button" onclick="addPayment('firma3')">Ödeme Ekle</button>
+                    <button class="clear-button" onclick="clearPayments('firma3')">Ödemeleri Sil</button>
+                </div>
+                <table id="payment-table-firma3">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Ödeme Miktarı</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Ödeme: <span id="total-payment-firma3">0,00</span></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
 
     <div class="container-bottom">
-        <div class="frame frame-ayd">
-            <h2>Ayd GSM</h2>
-            <div class="input-group">
-                <input type="number" id="amount-ayd" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-ayd').click()">
-                <input type="number" id="percentage-ayd" placeholder="3.9" value="3.9" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-ayd').click()">
-                <button id="add-ayd" class="add-button" onclick="addToList('ayd')">Ekle</button>
-                <button class="clear-button" onclick="clearList('ayd')">Tümünü Sil</button>
+        <div class="frame frame-firma4">
+            <div class="frame-header" onclick="togglePassword('firma4')">Firma4</div>
+            <div class="frame-password" id="password-firma4">
+                <input type="password" id="password-input-firma4" placeholder="Şifre" onkeydown="if(event.key === 'Enter') checkPassword('firma4')">
+                <button onclick="checkPassword('firma4')">Giriş</button>
+                <div class="error-message" id="error-firma4">Şifre Yanlış</div>
             </div>
-            <table id="table-ayd">
-                <thead>
-                    <tr>
-                        <th>Tutar</th>
-                        <th>Yüzde</th>
-                        <th>Kesinti</th>
-                        <th>Net</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                    <tr>
-                        <td>Toplam: <span id="total-amount-ayd">0,00</span></td>
-                        <td></td>
-                        <td><span id="total-deduction-ayd">0,00</span></td>
-                        <td><span id="total-net-ayd">0,00</span></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
+            <div class="frame-content" id="content-firma4">
+                <h2>Firma4</h2>
+                <div class="input-group">
+                    <input type="number" id="amount-firma4" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma4').click()">
+                    <input type="number" id="percentage-firma4" placeholder="3.9" value="3.9" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma4').click()">
+                    <button id="add-firma4" class="add-button" onclick="addToList('firma4')">Ekle</button>
+                    <button class="clear-button" onclick="clearList('firma4')">Tümünü Sil</button>
+                </div>
+                <table id="table-firma4">
+                    <thead>
+                        <tr>
+                            <th>Tutar</th>
+                            <th>Yüzde</th>
+                            <th>Kesinti</th>
+                            <th>Net</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Harcama: <span id="total-amount-firma4">0,00</span></td>
+                            <td></td>
+                            <td><span id="total-deduction-firma4">0,00</span></td>
+                            <td><span id="total-net-firma4">0,00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="number" id="payment-amount-firma4" placeholder="Ödeme Miktarı" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-payment-firma4').click()">
+                    <button id="add-payment-firma4" class="add-button" onclick="addPayment('firma4')">Ödeme Ekle</button>
+                    <button class="clear-button" onclick="clearPayments('firma4')">Ödemeleri Sil</button>
+                </div>
+                <table id="payment-table-firma4">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Ödeme Miktarı</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Ödeme: <span id="total-payment-firma4">0,00</span></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
 
-        <div class="frame frame-ars">
-            <h2>Ars GSM</h2>
-            <div class="input-group">
-                <input type="number" id="amount-ars" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-ars').click()">
-                <input type="number" id="percentage-ars" placeholder="4" value="4" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-ars').click()">
-                <button id="add-ars" class="add-button" onclick="addToList('ars')">Ekle</button>
-                <button class="clear-button" onclick="clearList('ars')">Tümünü Sil</button>
+        <div class="frame frame-firma5">
+            <div class="frame-header" onclick="togglePassword('firma5')">Firma5</div>
+            <div class="frame-password" id="password-firma5">
+                <input type="password" id="password-input-firma5" placeholder="Şifre" onkeydown="if(event.key === 'Enter') checkPassword('firma5')">
+                <button onclick="checkPassword('firma5')">Giriş</button>
+                <div class="error-message" id="error-firma5">Şifre Yanlış</div>
             </div>
-            <table id="table-ars">
-                <thead>
-                    <tr>
-                        <th>Tutar</th>
-                        <th>Yüzde</th>
-                        <th>Kesinti</th>
-                        <th>Net</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                    <tr>
-                        <td>Toplam: <span id="total-amount-ars">0,00</span></td>
-                        <td></td>
-                        <td><span id="total-deduction-ars">0,00</span></td>
-                        <td><span id="total-net-ars">0,00</span></td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
+            <div class="frame-content" id="content-firma5">
+                <h2>Firma5</h2>
+                <div class="input-group">
+                    <input type="number" id="amount-firma5" placeholder="Tutar" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma5').click()">
+                    <input type="number" id="percentage-firma5" placeholder="4" value="4" step="0.01" class="yuzde-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-firma5').click()">
+                    <button id="add-firma5" class="add-button" onclick="addToList('firma5')">Ekle</button>
+                    <button class="clear-button" onclick="clearList('firma5')">Tümünü Sil</button>
+                </div>
+                <table id="table-firma5">
+                    <thead>
+                        <tr>
+                            <th>Tutar</th>
+                            <th>Yüzde</th>
+                            <th>Kesinti</th>
+                            <th>Net</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Harcama: <span id="total-amount-firma5">0,00</span></td>
+                            <td></td>
+                            <td><span id="total-deduction-firma5">0,00</span></td>
+                            <td><span id="total-net-firma5">0,00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="number" id="payment-amount-firma5" placeholder="Ödeme Miktarı" step="0.01" class="tutar-input" onkeydown="if(event.key === 'Enter') document.getElementById('add-payment-firma5').click()">
+                    <button id="add-payment-firma5" class="add-button" onclick="addPayment('firma5')">Ödeme Ekle</button>
+                    <button class="clear-button" onclick="clearPayments('firma5')">Ödemeleri Sil</button>
+                </div>
+                <table id="payment-table-firma5">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Ödeme Miktarı</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <td>Toplam Ödeme: <span id="total-payment-firma5">0,00</span></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -370,13 +600,92 @@
         <button class="reset-button" onclick="resetDay()">Yeni Gün Başlat</button>
     </div>
 
+    <div class="show-section">
+        <label>Lütfen görmek istediğiniz firmayı seçin:</label>
+        <select id="showBayi">
+            <option value="">Firma Seçin</option>
+            <option value="firma1">Firma1</option>
+            <option value="firma2">Firma2</option>
+            <option value="firma3">Firma3</option>
+            <option value="firma4">Firma4</option>
+            <option value="firma5">Firma5</option>
+        </select>
+        <button onclick="showBayi()">Seç</button>
+    </div>
+
     <script>
         let transactions = JSON.parse(localStorage.getItem('dailyTransactions')) || [];
+        let unlockedFrames = JSON.parse(localStorage.getItem('unlockedFrames')) || {};
+        let visibleFrames = JSON.parse(localStorage.getItem('visibleFrames')) || [];
+
+        const baseValues = {
+            'firma1': 1955,
+            'firma2': 1111,
+            'firma3': 8999,
+            'firma4': 2919,
+            'firma5': 8647
+        };
+
+        const multiplier = 1.111111111111111;
+
+        function generatePassword(baseValue) {
+            return Math.round(baseValue * multiplier).toString().padStart(4, '0');
+        }
+
+        function togglePassword(frame) {
+            if (!visibleFrames.includes(frame)) return;
+            if (unlockedFrames[frame]) {
+                const contentElement = document.getElementById(`content-${frame}`);
+                if (contentElement) {
+                    contentElement.style.display = 'block';
+                }
+                return;
+            }
+            const passwordDiv = document.getElementById(`password-${frame}`);
+            if (passwordDiv) {
+                passwordDiv.classList.add('active');
+                const passwordInput = document.getElementById(`password-input-${frame}`);
+                if (passwordInput) {
+                    passwordInput.focus();
+                }
+            }
+        }
+
+        function checkPassword(frame) {
+            if (!visibleFrames.includes(frame)) return;
+            const passwordInput = document.getElementById(`password-input-${frame}`);
+            const errorMessage = document.getElementById(`error-${frame}`);
+            if (!passwordInput || !errorMessage) return;
+
+            const enteredPassword = passwordInput.value;
+            const expectedPassword = generatePassword(baseValues[frame]);
+            
+            if (enteredPassword === expectedPassword) {
+                unlockedFrames[frame] = true;
+                localStorage.setItem('unlockedFrames', JSON.stringify(unlockedFrames));
+                const contentElement = document.getElementById(`content-${frame}`);
+                const passwordDiv = document.getElementById(`password-${frame}`);
+                if (contentElement) {
+                    contentElement.style.display = 'block';
+                }
+                if (passwordDiv) {
+                    passwordDiv.classList.remove('active');
+                }
+                errorMessage.style.display = 'none';
+                updateTables();
+            } else {
+                errorMessage.style.display = 'block';
+                passwordInput.value = '';
+            }
+        }
 
         function addToList(frame) {
+            if (!visibleFrames.includes(frame)) return;
             const amountInput = document.getElementById(`amount-${frame}`);
             const percentageInput = document.getElementById(`percentage-${frame}`);
             const tableBody = document.querySelector(`#table-${frame} tbody`);
+
+            if (!amountInput || !percentageInput || !tableBody) return;
 
             const amount = parseFloat(amountInput.value);
             const percentage = parseFloat(percentageInput.value);
@@ -399,7 +708,7 @@
             `;
             tableBody.appendChild(row);
 
-            transactions.push({ frame, amount, percentage, deduction, net, date: new Date().toLocaleString('tr-TR') });
+            transactions.push({ frame, amount, percentage, deduction, net, date: new Date().toLocaleString('tr-TR'), type: 'transaction' });
             localStorage.setItem('dailyTransactions', JSON.stringify(transactions));
 
             amountInput.value = "";
@@ -409,59 +718,164 @@
         }
 
         function removeTransaction(frame, index) {
-            transactions = transactions.filter((t, i) => !(t.frame === frame && i === index));
+            if (!visibleFrames.includes(frame)) return;
+            transactions = transactions.filter((t, i) => !(t.frame === frame && i === index && t.type === 'transaction'));
             localStorage.setItem('dailyTransactions', JSON.stringify(transactions));
             updateTables();
         }
 
         function clearList(frame) {
+            if (!visibleFrames.includes(frame)) return;
             const tableBody = document.querySelector(`#table-${frame} tbody`);
+            if (!tableBody) return;
+
             tableBody.innerHTML = "";
-            transactions = transactions.filter(t => t.frame !== frame);
+            transactions = transactions.filter(t => t.frame !== frame || t.type !== 'transaction');
+            localStorage.setItem('dailyTransactions', JSON.stringify(transactions));
+            updateTables();
+        }
+
+        function addPayment(frame) {
+            if (!visibleFrames.includes(frame)) return;
+            const paymentInput = document.getElementById(`payment-amount-${frame}`);
+            const paymentTableBody = document.querySelector(`#payment-table-${frame} tbody`);
+
+            if (!paymentInput || !paymentTableBody) return;
+
+            const amount = parseFloat(paymentInput.value);
+
+            if (isNaN(amount)) {
+                alert("Lütfen geçerli bir ödeme miktarı girin!");
+                return;
+            }
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${new Date().toLocaleString('tr-TR')}</td>
+                <td>${amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td><button class="delete-row-button" onclick="this.parentElement.parentElement.remove(); removePayment('${frame}', this.parentElement.parentElement.rowIndex - 1)">Sil</button></td>
+            `;
+            paymentTableBody.appendChild(row);
+
+            transactions.push({ frame, amount, date: new Date().toLocaleString('tr-TR'), type: 'payment' });
+            localStorage.setItem('dailyTransactions', JSON.stringify(transactions));
+
+            paymentInput.value = "";
+
+            updateTables();
+        }
+
+        function removePayment(frame, index) {
+            if (!visibleFrames.includes(frame)) return;
+            transactions = transactions.filter((t, i) => !(t.frame === frame && i === index && t.type === 'payment'));
+            localStorage.setItem('dailyTransactions', JSON.stringify(transactions));
+            updateTables();
+        }
+
+        function clearPayments(frame) {
+            if (!visibleFrames.includes(frame)) return;
+            const paymentTableBody = document.querySelector(`#payment-table-${frame} tbody`);
+            if (!paymentTableBody) return;
+
+            paymentTableBody.innerHTML = "";
+            transactions = transactions.filter(t => t.frame !== frame || t.type !== 'payment');
             localStorage.setItem('dailyTransactions', JSON.stringify(transactions));
             updateTables();
         }
 
         function updateTotals(frame) {
-            const frameTransactions = transactions.filter(t => t.frame === frame);
+            if (!visibleFrames.includes(frame)) return;
+            const totalAmountElement = document.getElementById(`total-amount-${frame}`);
+            const totalDeductionElement = document.getElementById(`total-deduction-${frame}`);
+            const totalNetElement = document.getElementById(`total-net-${frame}`);
+            const totalPaymentElement = document.getElementById(`total-payment-${frame}`);
+
+            if (!totalAmountElement || !totalDeductionElement || !totalNetElement || !totalPaymentElement) return;
+
+            const frameTransactions = transactions.filter(t => t.frame === frame && t.type === 'transaction');
             const totalAmount = frameTransactions.reduce((sum, t) => sum + t.amount, 0);
             const totalDeduction = frameTransactions.reduce((sum, t) => sum + t.deduction, 0);
             const totalNet = frameTransactions.reduce((sum, t) => sum + t.net, 0);
 
-            document.getElementById(`total-amount-${frame}`).textContent = totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById(`total-deduction-${frame}`).textContent = totalDeduction.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById(`total-net-${frame}`).textContent = totalNet.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalAmountElement.textContent = totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalDeductionElement.textContent = totalDeduction.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            totalNetElement.textContent = totalNet.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const framePayments = transactions.filter(t => t.frame === frame && t.type === 'payment');
+            const totalPayment = framePayments.reduce((sum, t) => sum + t.amount, 0);
+
+            totalPaymentElement.textContent = totalPayment.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function updateTables() {
-            ['anac', 'akfa', 'ben', 'ayd', 'ars'].forEach(frame => {
+            ['firma1', 'firma2', 'firma3', 'firma4', 'firma5'].forEach(frame => {
+                if (!visibleFrames.includes(frame)) {
+                    const frameElement = document.querySelector(`.frame-${frame}`);
+                    const contentElement = document.getElementById(`content-${frame}`);
+                    const passwordElement = document.getElementById(`password-${frame}`);
+                    if (frameElement) frameElement.style.display = 'none';
+                    if (contentElement) contentElement.style.display = 'none';
+                    if (passwordElement) passwordElement.classList.remove('active');
+                    return;
+                }
+
+                const frameElement = document.querySelector(`.frame-${frame}`);
+                if (!frameElement) return;
+
+                frameElement.style.display = 'block';
+                const contentElement = document.getElementById(`content-${frame}`);
+                if (unlockedFrames[frame] && contentElement) {
+                    contentElement.style.display = 'block';
+                } else if (contentElement) {
+                    contentElement.style.display = 'none';
+                }
+
                 const tableBody = document.querySelector(`#table-${frame} tbody`);
-                tableBody.innerHTML = "";
-                transactions.filter(t => t.frame === frame).forEach((t, i) => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${t.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td>${t.percentage.toFixed(2)}%</td>
-                        <td>${t.deduction.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td>${t.net.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td><button class="delete-row-button" onclick="removeTransaction('${frame}', ${i})">Sil</button></td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-                updateTotals(frame); // Toplamları güncelle
+                if (tableBody) {
+                    tableBody.innerHTML = "";
+                    transactions.filter(t => t.frame === frame && t.type === 'transaction').forEach((t, i) => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${t.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${t.percentage.toFixed(2)}%</td>
+                            <td>${t.deduction.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td>${t.net.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td><button class="delete-row-button" onclick="removeTransaction('${frame}', ${i})">Sil</button></td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                }
+
+                const paymentTableBody = document.querySelector(`#payment-table-${frame} tbody`);
+                if (paymentTableBody) {
+                    paymentTableBody.innerHTML = "";
+                    transactions.filter(t => t.frame === frame && t.type === 'payment').forEach((t, i) => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${t.date}</td>
+                            <td>${t.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            <td><button class="delete-row-button" onclick="removePayment('${frame}', ${i})">Sil</button></td>
+                        `;
+                        paymentTableBody.appendChild(row);
+                    });
+                }
+
+                updateTotals(frame);
             });
         }
 
         function saveTransactions() {
             const csv = [
-                "Tarih,Çerçeve,Tutar (TL),Yüzde (%),Kesinti (TL),Net (TL)",
+                "Tarih,Çerçeve,Tür,Tutar (TL),Yüzde (%),Kesinti (TL),Net (TL),Ödeme Miktarı",
                 ...transactions.map(t => [
                     `"${t.date.replace(/"/g, '""')}"`,
                     t.frame,
-                    t.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                    `${t.percentage.toFixed(2)}%`,
-                    t.deduction.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-                    t.net.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                    t.type,
+                    t.type === 'transaction' ? t.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+                    t.type === 'transaction' ? `${t.percentage.toFixed(2)}%` : '',
+                    t.type === 'transaction' ? t.deduction.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+                    t.type === 'transaction' ? t.net.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+                    t.type === 'payment' ? t.amount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
                 ].join(","))
             ].join("\n");
             const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
@@ -475,16 +889,62 @@
 
         function resetDay() {
             transactions = [];
+            unlockedFrames = {};
+            visibleFrames = [];
             localStorage.removeItem('dailyTransactions');
+            localStorage.removeItem('unlockedFrames');
+            localStorage.removeItem('visibleFrames');
+            ['firma1', 'firma2', 'firma3', 'firma4', 'firma5'].forEach(frame => {
+                const contentElement = document.getElementById(`content-${frame}`);
+                const passwordElement = document.getElementById(`password-${frame}`);
+                const frameElement = document.querySelector(`.frame-${frame}`);
+                if (contentElement) contentElement.style.display = 'none';
+                if (passwordElement) passwordElement.classList.remove('active');
+                if (frameElement) frameElement.style.display = 'none';
+            });
             updateTables();
-            alert("Günlük işlemler temizlendi ve yeni gün başlatıldı!");
+            alert("Günlük işlemler temizlendi ve yeni gün başlatıldı! Tüm firmalar gizlendi ve ayarlar sıfırlandı.");
+        }
+
+        function showBayi() {
+            const select = document.getElementById('showBayi');
+            if (!select) return;
+
+            const frame = select.value;
+            if (frame && !visibleFrames.includes(frame)) {
+                visibleFrames.push(frame);
+                localStorage.setItem('visibleFrames', JSON.stringify(visibleFrames));
+                select.value = '';
+                updateTables();
+                togglePassword(frame);
+            }
         }
 
         window.addEventListener('beforeunload', () => {
             localStorage.setItem('dailyTransactions', JSON.stringify(transactions));
+            localStorage.setItem('unlockedFrames', JSON.stringify(unlockedFrames));
+            localStorage.setItem('visibleFrames', JSON.stringify(visibleFrames));
         });
 
-        window.onload = updateTables;
+        window.onload = () => {
+            if (visibleFrames.length === 0) {
+                visibleFrames = ['firma1'];
+                localStorage.setItem('visibleFrames', JSON.stringify(visibleFrames));
+            }
+            visibleFrames.forEach(frame => {
+                const frameElement = document.querySelector(`.frame-${frame}`);
+                if (frameElement) {
+                    frameElement.style.display = 'block';
+                }
+                if (unlockedFrames[frame]) {
+                    const contentElement = document.getElementById(`content-${frame}`);
+                    if (contentElement) {
+                        contentElement.style.display = 'block';
+                    }
+                }
+            });
+            updateTables();
+        };
     </script>
 </body>
 </html>
